@@ -1,1 +1,1 @@
-Proyecto para la asignatur de blockchain
+Proyecto para la asignatura de blockchain
