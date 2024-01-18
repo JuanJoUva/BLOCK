@@ -28,7 +28,8 @@ contract Contrato {
     mapping(address => Recarga[]) private recargasCompletadas;
 
     event listaPendientes(Recarga[]lista, address proveedor);
-    event RecargaRegistrada(uint coste, address usuario);
+    event RecargaPendiente(uint coste, uint16 consumo, uint fecha, address idUsuario);
+    event RecargaRegistrada(uint coste, uint saldo, address usuario);
     event DeudaSaldada(uint saldo, address proveedor);
     
     constructor(uint fechaFin,uint32 coste){
@@ -55,7 +56,7 @@ contract Contrato {
         usuarioProveedor[usuario1] = proveedor1;
         
         //Usuario 2 (David) 
-        address usuario2 = 0x0B782436FC56Eb8d2b6c7aFE81e2D510670F7f94;
+        address usuario2 = 0x4DA6F8767f5013f0F46982290cC0CdD1D5FFAE67;
         saldoUsuario[usuario2] = 20000;
         usuarioProveedor[usuario2] = proveedor2;
         //Usuario 3 (JJ) 
@@ -66,7 +67,6 @@ contract Contrato {
     }
 
     
-
     //Añadir recargas a la lista de transacciones
     //LLamda por usuarios de estaciones de recargas
     function registrarRecarga(uint16 _consumo, uint _fecha, uint _estacion) public{
@@ -100,21 +100,24 @@ contract Contrato {
         }
 
         console.log("Recarga por valor de ",coste," se ha efectuado con exito");
-        emit RecargaRegistrada(coste, msg.sender);
+        emit RecargaRegistrada(coste, saldoUsuario[msg.sender], msg.sender);
     }
 
     //Extrae y muestra la lista de pagos pendientes que tiene una proveedores
     //Funcion ejecutada por proveedores
     function pagosPendientes() public {
 
-        Recarga[] memory pendientes =recargasPendientes[msg.sender]; 
-        emit listaPendientes(pendientes,msg.sender);
+        Recarga[] memory pendientes = recargasPendientes[msg.sender]; 
+        //emit listaPendientes(pendientes,msg.sender);
+        for (uint i =0;i<pendientes.length; i++){
+            emit RecargaPendiente(pendientes[i].costeRecarga, pendientes[i].consumo, pendientes[i].fecha, pendientes[i].idUsuario);
+        }
     }
 
     //Funcion que salda las deudas, de la empresa que llama a este metodo
     function saldarDeudas() public{
         //Extraemos la lista de transacciones pendientes
-        Recarga[] memory pendientes=recargasPendientes[msg.sender]; 
+        Recarga[] memory pendientes = recargasPendientes[msg.sender]; 
         require(pendientes.length >0 , "No tienes deudas registradas en el sistema");
 
         //Leer la lista, calcular el coste total a pagar Total, y saldar la deuda de las recargas, siempre que pueda
