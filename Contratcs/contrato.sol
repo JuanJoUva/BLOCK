@@ -31,7 +31,9 @@ contract Contrato {
     event RecargaPendiente(uint coste, uint16 consumo, uint fecha, address idUsuario);
     event RecargaRegistrada(uint coste, uint saldo, address usuario);
     event DeudaSaldada(uint saldo, address proveedor);
-    
+    event MostrarSaldo(address user, uint saldo);
+
+
     constructor(uint fechaFin,uint32 coste){
         fechaExpiracion = fechaFin;
         precioUnitario = coste;
@@ -112,6 +114,10 @@ contract Contrato {
         for (uint i =0;i<pendientes.length; i++){
             emit RecargaPendiente(pendientes[i].costeRecarga, pendientes[i].consumo, pendientes[i].fecha, pendientes[i].idUsuario);
         }
+    }
+    function verSaldoProveedor() public {
+
+        emit MostrarSaldo(msg.sender,saldoProveedor[msg.sender]);
     }
 
     //Funcion que salda las deudas, de la empresa que llama a este metodo
