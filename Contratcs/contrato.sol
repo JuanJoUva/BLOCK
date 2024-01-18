@@ -25,10 +25,12 @@ contract Contrato {
     mapping(uint => address) private estacionProveedor;
     mapping(address => address) private usuarioProveedor;
     mapping(address => Recarga[]) private recargasPendientes;
+    mapping(address => Recarga[]) private recargasCompletadas;
 
-    event TotalAPagar(uint128 coste, address proveedor);
     event listaPendientes(Recarga[]lista, address proveedor);
-    event EmitirCoste(uint coste, address usuario);
+    event RecargaRegistrada(uint coste, address usuario);
+    event DeudaSaldada(uint saldo, address proveedor);
+    
     constructor(uint fechaFin,uint32 coste){
         fechaExpiracion = fechaFin;
         precioUnitario = coste;
@@ -75,7 +77,7 @@ contract Contrato {
         //Crearmos la nueva recarga a añadir al sistema
         Recarga memory nuevaRecarga = Recarga({
             consumo: _consumo,
-            dni: msg.sender,
+            idUsuario: msg.sender,
             fecha: _fecha,
             idEstacion: _estacion,
             costeRecarga: coste
@@ -85,16 +87,20 @@ contract Contrato {
         saldoUsuario[msg.sender] -= coste;
         
         //Añadimos saldo al prveedor
-        address proveedorUsr = usuarioProveedor[msg.sender];
-        saldoProveedor[proveedorUsr] += coste;
-
-        //Añadimos la recarga a pendientes a pagar
         address proveedorUsuario = usuarioProveedor[msg.sender];
-        recargasPendientes[proveedorUsuario].push(nuevaRecarga);
+        saldoProveedor[proveedorUsuario] += coste;
+
+        address proveedorEstacion = estacionProveedor[nuevaRecarga.idEstacion];
+        if (proveedorUsuario != proveedorEstacion) {
+            //Añadimos la recarga a pendientes a pagar
+            recargasPendientes[proveedorUsuario].push(nuevaRecarga);
+        } else {
+            //La recarga ya se ha pagado al proveedor correspondiente
+            recargasCompletadas[proveedorUsuario].push(nuevaRecarga);
+        }
 
         console.log("Recarga por valor de ",coste," se ha efectuado con exito");
-        emit EmitirCoste(coste,msg.sender);
-
+        emit RecargaRegistrada(coste, msg.sender);
     }
 
     //Extrae y muestra la lista de pagos pendientes que tiene una proveedores
@@ -113,18 +119,22 @@ contract Contrato {
 
         //Leer la lista, calcular el coste total a pagar Total, y saldar la deuda de las recargas, siempre que pueda
         for (uint i =0;i<pendientes.length;i++){
-            uint coste = pendientes[i].consumo * precioUnitario;
+            uint coste = pendientes[i].costeRecarga;
             require(saldoProveedor[msg.sender] >= coste, "No tienes saldo suficiente para pagar tus deudas");
             saldoProveedor[msg.sender] -= coste;
 
             //Hallamos a quien tiene que pagarle el Proveedor que ha hecho la peticion
             address proveedorAPagar = estacionProveedor[pendientes[i].idEstacion];
-            saldoProveedor[proveedorAPagar] += coste; 
+            saldoProveedor[proveedorAPagar] += coste;
+
+            //Histórico de recargas por proveedor
+            recargasCompletadas[msg.sender].push(pendientes[i]);
         }
 
         //vaciamos lista de pendientes
         delete recargasPendientes[msg.sender];
-    }
 
+        emit DeudaSaldada(saldoProveedor[msg.sender], msg.sender);
+    }
 
 }
