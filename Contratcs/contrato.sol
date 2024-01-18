@@ -8,7 +8,7 @@ contract Contrato {
     //Variable de transacciones
     struct Recarga{
         //Idenntificadores de transaccion
-        address dni;//DNI del usuario que uso la estacion
+        address idUsuario;//DNI del usuario que uso la estacion
         uint fecha;//Fecha de la realizacion de la recarga
         uint16 consumo;//Energia consumida en Wh
         uint idEstacion;//Direccion de la estacion donde se hizo la recarga
